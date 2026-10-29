@@ -1,0 +1,116 @@
+// CRM del equipo: los clientes de todas las apps (BodegApp, Merk2,
+// Pregonero de la Suerte…), cargados a mano por el equipo.
+//
+// Los cambios de tablas van como migraciones en prisma/migrations y se
+// aplican con `npm run migrar` (el contenedor lo hace solo al arrancar).
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  /// Carga, corrige, borra, y administra usuarios.
+  ADMIN
+  /// Carga y corrige. No borra ni ve usuarios.
+  EQUIPO
+}
+
+/// Quien entra al CRM. Cada persona tiene el suyo: así se sabe quién
+/// cargó cada cliente.
+model Usuario {
+  id           String   @id @default(uuid()) @db.Uuid
+  nombre       String   @db.VarChar(120)
+  /// Con lo que entra. Siempre en minúsculas.
+  usuario      String   @unique @db.VarChar(60)
+  /// bcrypt. Nunca la contraseña.
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  rol          Rol      @default(EQUIPO)
+  /// Dado de baja: no entra más, pero lo que cargó queda con su nombre.
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  contactos Contacto[] @relation("cargadoPor")
+
+  @@map("usuarios")
+}
+
+/// Un cliente, un renglón de la vieja planilla "CRM 2.xlsx".
+model Contacto {
+  id  String @id @default(uuid()) @db.Uuid
+  /// De qué app viene: un nombre de Opcion tipo APP.
+  app String @db.VarChar(60)
+
+  fechaContacto DateTime? @map("fecha_contacto") @db.Date
+  contactoTipo  String?   @map("contacto_tipo") @db.VarChar(20)
+  canalDigital  String?   @map("canal_digital") @db.VarChar(40)
+  canalFisico   String?   @map("canal_fisico") @db.VarChar(40)
+
+  nombre    String  @db.VarChar(160)
+  ciTipo    String? @map("ci_tipo") @db.VarChar(1)
+  ci        String? @db.VarChar(12)
+  telefono  String? @db.VarChar(20)
+  telefono2 String? @db.VarChar(20)
+  correo    String? @db.VarChar(160)
+
+  estado          String? @db.VarChar(80)
+  municipio       String? @db.VarChar(80)
+  parroquia       String? @db.VarChar(80)
+  sector          String? @db.VarChar(120)
+  comunidad       String? @db.VarChar(120)
+  calle           String? @db.VarChar(200)
+  puntoReferencia String? @map("punto_referencia") @db.VarChar(300)
+
+  interesado String? @db.VarChar(20)
+  potencial  String? @db.VarChar(20)
+  plan       String? @db.VarChar(40)
+
+  /// Texto y no relación: si alguien se va del equipo, su nombre queda
+  /// en los clientes que atendió.
+  promotor String? @db.VarChar(120)
+  vendedor String? @db.VarChar(120)
+
+  pedido            String?   @db.VarChar(5)
+  fechaPedido       DateTime? @map("fecha_pedido") @db.Date
+  monto             Decimal?  @db.Decimal(12, 2)
+  credito           String?   @db.VarChar(5)
+  cobranza          String?   @db.VarChar(20)
+  cuentasPendientes Decimal?  @map("cuentas_pendientes") @db.Decimal(12, 2)
+  cuotas            Decimal?  @db.Decimal(12, 2)
+  olvidoClave       String?   @map("olvido_clave") @db.VarChar(5)
+  reclamoTipo       String?   @map("reclamo_tipo") @db.VarChar(30)
+  reclamo           String?   @db.VarChar(500)
+  observaciones     String?   @db.Text
+
+  cargadoPorId   String?  @map("cargado_por_id") @db.Uuid
+  cargadoPor     Usuario? @relation("cargadoPor", fields: [cargadoPorId], references: [id], onDelete: SetNull)
+  actualizadoPor String?  @map("actualizado_por") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([app])
+  @@index([ci])
+  @@index([telefono])
+  @@index([createdAt])
+  @@map("contactos")
+}
+
+/// Las listas que crecen desde la pantalla: las apps y la gente del
+/// equipo. Las opciones fijas (canales, potencial, planes…) viven en
+/// src/lib/crm.ts.
+model Opcion {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// APP, PROMOTOR o VENDEDOR.
+  tipo      String   @db.VarChar(20)
+  nombre    String   @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([tipo, nombre])
+  @@map("opciones")
+}

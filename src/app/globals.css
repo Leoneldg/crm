@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Los colores en RGB sueltos para que Tailwind pueda aplicarles
+   transparencia (bg-brand/10). */
+:root {
+  --bg: 243 245 242;
+  --surface: 255 255 255;
+  --ink: 24 36 43;
+  --ink-soft: 61 76 82;
+  --ink-mute: 93 107 112;
+  --line: 225 230 226;
+  --line-strong: 205 213 208;
+  --brand: 15 110 99;
+  --brand-light: 22 132 119;
+  --brand-soft: 220 239 235;
+  --coral: 179 38 30;
+  --coral-soft: 251 228 226;
+  --aviso: 150 76 22;
+  --aviso-soft: 251 234 219;
+  --verde: 31 122 58;
+  --verde-soft: 222 243 228;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: 17 24 27;
+    --surface: 24 34 38;
+    --ink: 230 236 234;
+    --ink-soft: 196 206 204;
+    --ink-mute: 148 163 166;
+    --line: 43 56 61;
+    --line-strong: 62 78 84;
+    --brand: 76 194 176;
+    --brand-light: 104 210 194;
+    --brand-soft: 29 58 54;
+    --coral: 255 138 128;
+    --coral-soft: 64 32 30;
+    --aviso: 240 164 106;
+    --aviso-soft: 58 42 29;
+    --verde: 127 212 154;
+    --verde-soft: 28 52 36;
+    color-scheme: dark;
+  }
+}
+
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--ink));
+}
+
+/* Texto sobre el botón petróleo: blanco en tema claro y oscuro sobre el petróleo claro del tema oscuro. */
+.texto-sobre-brand {
+  color: rgb(var(--surface));
+}

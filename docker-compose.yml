@@ -1,0 +1,44 @@
+# ══════════════════════════════════════════════════════════════════
+# CRM del equipo — producción
+#
+#   docker compose up -d --build
+#
+# Dos servicios: la app y su propia base Postgres. No comparte nada con
+# BodegApp: se puede levantar en el mismo servidor sin tocarla, en otro
+# puerto (CRM_PORT, 3100 por defecto).
+# ══════════════════════════════════════════════════════════════════
+services:
+  app:
+    build: .
+    image: crm-equipo:latest
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en el .env}@db:5432/crm
+      SESSION_SECRET: ${SESSION_SECRET:?falta SESSION_SECRET en el .env}
+      # Mientras se entra por IP y sin HTTPS, ponlo en 1 o la sesión no
+      # se guarda. Con dominio y HTTPS, déjalo vacío.
+      COOKIE_INSEGURA: ${COOKIE_INSEGURA:-}
+    ports:
+      - "${CRM_PORT:-3100}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en el .env}
+      POSTGRES_DB: crm
+    volumes:
+      - crm_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm -d crm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  crm_pgdata:
