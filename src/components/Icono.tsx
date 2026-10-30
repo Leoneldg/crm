@@ -8,6 +8,7 @@ const TRAZOS = {
   salir: "M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10",
   usuarios: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21c0-4 3-6 7-6s7 2 7 6M17 3.5a4 4 0 0 1 0 7.5M22 21c0-3-1.5-5-4-5.7",
   volver: "M15 6l-6 6 6 6",
+  cerrar: "M6 6l12 12M18 6L6 18",
 } as const;
 
 export type NombreDeIcono = keyof typeof TRAZOS;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizar, planillaCrm, posiblesDuplicados, type CrmContacto } from "@/lib/crm";
+import { coincideConBusqueda, normalizar, planillaCrm, posiblesDuplicados, type CrmContacto } from "@/lib/crm";
 import { ErrorDeDatos, datosDeContacto, opcionNueva, usuarioNuevo } from "@/lib/validacion";
 
 const APPS = ["BodegApp", "Merk2", "Pregonero de la Suerte"];
@@ -93,6 +93,48 @@ describe("planillaCrm", () => {
       [1, "Viejo"],
       [2, "Nuevo"],
     ]);
+  });
+});
+
+describe("coincideConBusqueda", () => {
+  const maria = contacto("m", {
+    nombre: "María Pérez",
+    ci: "12345678",
+    telefono: "0412-6722979",
+    estado: "Distrito Capital",
+    municipio: "Libertador",
+    parroquia: "El Valle",
+    promotor: "Maria M",
+    observaciones: "Nombre en WhatsApp: 🥰.",
+  });
+
+  it("sin búsqueda, muestra a todos", () => {
+    expect(coincideConBusqueda(maria, "   ")).toBe(true);
+  });
+
+  it("cada palabra tiene que aparecer, sin importar acentos ni mayúsculas", () => {
+    expect(coincideConBusqueda(maria, "maria valle")).toBe(true);
+    expect(coincideConBusqueda(maria, "PEREZ")).toBe(true);
+    expect(coincideConBusqueda(maria, "maria coche")).toBe(false);
+  });
+
+  it("encuentra el teléfono en cualquier formato, también como lo da WhatsApp", () => {
+    for (const q of ["04126722979", "0412-672", "0412 672 2979", "584126722979", "2979"]) {
+      expect(coincideConBusqueda(maria, q), q).toBe(true);
+    }
+    expect(coincideConBusqueda(maria, "0414")).toBe(false);
+  });
+
+  it("encuentra la cédula con o sin puntos, y con la letra adelante", () => {
+    expect(coincideConBusqueda(maria, "12.345.678")).toBe(true);
+    expect(coincideConBusqueda(maria, "V-12345678")).toBe(true);
+    expect(coincideConBusqueda(maria, "v12345678")).toBe(true);
+    expect(coincideConBusqueda(maria, "87654321")).toBe(false);
+  });
+
+  it("busca también en el promotor y en las observaciones", () => {
+    expect(coincideConBusqueda(maria, "maria m")).toBe(true);
+    expect(coincideConBusqueda(maria, "🥰")).toBe(true);
   });
 });
 

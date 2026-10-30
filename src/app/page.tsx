@@ -9,6 +9,7 @@ import type { CrmContacto } from "@/lib/crm";
 import type { Sesion } from "@/lib/sesion";
 import { AvisoProvider } from "@/components/Aviso";
 import { Encabezado } from "@/components/Encabezado";
+import { Icono } from "@/components/Icono";
 import { FormularioCrm } from "@/components/FormularioCrm";
 import { ListaCrm } from "@/components/ListaCrm";
 import { hoy, mensajeDe, type CrmOpciones } from "@/components/comunes";
@@ -21,6 +22,7 @@ export default function CrmPage() {
   const [contactos, setContactos] = useState<CrmContacto[]>([]);
   const [opciones, setOpciones] = useState<CrmOpciones>(SIN_OPCIONES);
   const [editando, setEditando] = useState<CrmContacto | null>(null);
+  const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,6 +75,39 @@ export default function CrmPage() {
           </div>
         )}
 
+        {/* Arriba de las pestañas para que esté a mano desde las dos:
+            al escribir se pasa sola a Registros, salvo mientras se
+            corrige a alguien. */}
+        <div className="relative mt-4">
+          <Icono nombre="buscar" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-mute" />
+          <input
+            id="buscador"
+            type="search"
+            value={busqueda}
+            onChange={(e) => {
+              setBusqueda(e.target.value);
+              if (e.target.value.trim() && vista === "cargar" && !editando) setVista("registros");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setBusqueda("");
+            }}
+            placeholder="Buscar cliente: nombre, cédula, teléfono, sector, promotor…"
+            aria-label="Buscar cliente"
+            autoComplete="off"
+            className="w-full rounded-2xl border-[1.5px] border-line-strong bg-surface py-3 pl-12 pr-11 text-[16px] text-ink outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/15 [&::-webkit-search-cancel-button]:hidden"
+          />
+          {busqueda && (
+            <button
+              type="button"
+              onClick={() => setBusqueda("")}
+              aria-label="Borrar la búsqueda"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-2 text-ink-mute hover:bg-brand-soft hover:text-brand"
+            >
+              <Icono nombre="cerrar" />
+            </button>
+          )}
+        </div>
+
         <div role="tablist" className="mt-5 flex gap-1 border-b border-line">
           {(
             [
@@ -124,6 +159,7 @@ export default function CrmPage() {
             <ListaCrm
               contactos={contactos}
               apps={opciones.APP}
+              busqueda={busqueda}
               onAbrir={(c) => {
                 setEditando(c);
                 setVista("cargar");

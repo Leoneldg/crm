@@ -160,3 +160,34 @@ export function planillaCrm(contactos: readonly CrmContacto[]): Celda[][] {
 export function normalizar(s: string): string {
   return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
 }
+
+/** "584126722979" (como lo da WhatsApp) → "04126722979", como se guarda. */
+const numeroLocal = (d: string): string => (d.length >= 12 && d.startsWith("58") ? "0" + d.slice(2) : d);
+
+/**
+ * Si el contacto coincide con lo que se escribió en el buscador. Cada
+ * palabra tiene que aparecer en algún lado: "maria valle" encuentra a
+ * María en El Valle. Una palabra hecha sólo de números (3 o más) se
+ * busca en la cédula y los teléfonos sin importar el formato:
+ * "0412-672", "0412 672" y "58412672" encuentran el mismo número.
+ */
+export function coincideConBusqueda(c: CrmContacto, busqueda: string): boolean {
+  const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean);
+  if (palabras.length === 0) return true;
+  const texto = normalizar(
+    [c.nombre, c.app, c.correo, c.estado, c.municipio, c.parroquia, c.sector, c.comunidad, c.calle, c.puntoReferencia, c.promotor, c.vendedor, c.plan, c.interesado, c.observaciones, c.reclamo, c.cargadoPor]
+      .filter(Boolean)
+      .join(" ")
+  );
+  const numeros = [c.ci, c.telefono, c.telefono2].map((n) => numeroLocal(soloDigitos(n))).filter(Boolean);
+  return palabras.every((p) => {
+    const d = soloDigitos(p);
+    // "V-12345678" también es un número: la letra de la cédula no cuenta.
+    const esNumero = d.length >= 3 && d.length === p.replace(/^[vej]-?/, "").replace(/[\s().+-]/g, "").length;
+    if (esNumero) {
+      const local = numeroLocal(d);
+      return numeros.some((n) => n.includes(local) || n.includes(d)) || texto.includes(p);
+    }
+    return texto.includes(p);
+  });
+}

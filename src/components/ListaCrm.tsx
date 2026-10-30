@@ -6,7 +6,7 @@
  */
 import { useMemo, useState } from "react";
 import { Icono } from "@/components/Icono";
-import { fechaCorta, normalizar, planillaCrm, type CrmContacto } from "@/lib/crm";
+import { coincideConBusqueda, fechaCorta, planillaCrm, type CrmContacto } from "@/lib/crm";
 import { CAMPO, TARJETA } from "@/components/comunes";
 import { useAviso } from "@/components/Aviso";
 
@@ -28,14 +28,16 @@ async function descargarExcel(contactos: readonly CrmContacto[], app: string): P
 export function ListaCrm({
   contactos,
   apps,
+  busqueda,
   onAbrir,
 }: {
   contactos: readonly CrmContacto[];
   apps: readonly string[];
+  /** Lo que se escribió en el buscador de arriba de la página. */
+  busqueda: string;
   onAbrir: (c: CrmContacto) => void;
 }) {
   const avisar = useAviso();
-  const [busqueda, setBusqueda] = useState("");
   const [app, setApp] = useState("");
   const [bajando, setBajando] = useState(false);
 
@@ -44,15 +46,10 @@ export function ListaCrm({
     [apps, contactos]
   );
 
-  const visibles = useMemo(() => {
-    const q = normalizar(busqueda);
-    return contactos.filter(
-      (c) =>
-        (!app || c.app === app) &&
-        (q === "" ||
-          normalizar([c.nombre, c.ci ?? "", c.telefono ?? "", c.telefono2 ?? "", c.correo ?? "", c.sector ?? "", c.comunidad ?? "", c.parroquia ?? "", c.municipio ?? ""].join(" ")).includes(q))
-    );
-  }, [contactos, busqueda, app]);
+  const visibles = useMemo(
+    () => contactos.filter((c) => (!app || c.app === app) && coincideConBusqueda(c, busqueda)),
+    [contactos, busqueda, app]
+  );
 
   async function bajar() {
     if (visibles.length === 0) return;
@@ -69,15 +66,11 @@ export function ListaCrm({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[220px] flex-1">
-          <Icono nombre="buscar" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-mute" />
-          <input
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, cédula, teléfono o sector"
-            className={`${CAMPO} !mt-0 pl-10`}
-          />
-        </div>
+        <p className="min-w-0 flex-1 text-[13px] text-ink-mute">
+          {busqueda.trim() || app
+            ? `${visibles.length} de ${contactos.length} cliente${contactos.length === 1 ? "" : "s"}`
+            : `${contactos.length} cliente${contactos.length === 1 ? "" : "s"}`}
+        </p>
         <select aria-label="Filtrar por app" value={app} onChange={(e) => setApp(e.target.value)} className={`${CAMPO} !mt-0 !w-auto`}>
           <option value="">Todas las apps</option>
           {todasLasApps.map((a) => (
